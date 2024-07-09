@@ -7,7 +7,7 @@ using System.Text;
 // Create a connection factory
 
 var factory = new ConnectionFactory();
-factory.Uri = new Uri("amqps://wwuqdkjr:I0JTDZq0njnYxKGoWaiPLCWi594OpmQT@sparrow.rmq.cloudamqp.com/wwuqdkjr");
+factory.Uri = new Uri("-cloud-");
 
 // Create a connection and a channel
 
