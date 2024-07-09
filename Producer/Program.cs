@@ -1,12 +1,13 @@
 ﻿
 
+using Producer;
 using RabbitMQ.Client;
 using System.Text;
 
 // Create a connection factory
 
 var factory = new ConnectionFactory();
-factory.Uri = new Uri("Cloud");
+factory.Uri = new Uri("Cloud-Address");
 
 // Create a connection and a channel
 
@@ -20,25 +21,50 @@ using var channel = connection.CreateModel();
 // durable: true - the exchange will survive a broker restart
 // autoDelete: false - the exchange will not be deleted when all queues have finished using it
 
-channel.ExchangeDeclare("example-fanout-exchange", ExchangeType.Fanout, true, false);
+channel.ExchangeDeclare("example-direct-exchange", ExchangeType.Direct, true, false);
+
+Enum.GetNames(typeof(MessageType)).ToList().ForEach(x =>
+{
+    // Declare a queue
+
+    // queue: queueName - the name of the queue
+    // durable: true - the queue will survive a broker restart
+    // exclusive: false - the queue can be accessed in other channels
+    // autoDelete: false - the queue will not be deleted when all consumers have finished using it
+
+    var queueName = "example-queue-" + x;
+
+    channel.QueueDeclare(queueName, true, false, false);
+
+    // Bind the queue to the exchange
+
+    // queue: queueName - the name of the queue
+    // exchange: "example-direct-exchange" - the name of the exchange
+    // routingKey: queueName - the name of the queue
+
+    channel.QueueBind(queueName, "example-direct-exchange", queueName);
+});
 
 // Create a message
 
-var body = Encoding.UTF8.GetBytes("Hello World");
+Enumerable.Range(1, 50).ToList().ForEach(x =>
+{
+    MessageType messageType = (MessageType)new Random().Next(1, 4);
 
-// Publish the message
+    var body = Encoding.UTF8.GetBytes("Message Type-" + messageType);
 
-// exchange: "" - the default exchange
-// routingKey: "example-queue" - the name of the queue
-// basicProperties: null - no additional properties
-// body: body - the message
+    var routingKey = "example-queue-" + messageType;
 
-channel.BasicPublish("example-fanout-exchange", "", null, body);
+    // Publish the message
 
-Console.WriteLine("Message Sent");
+    // exchange: "example-direct-exchange" - the default exchange
+    // routingKey: routingKey - the name of the queue
+    // basicProperties: null - no additional properties
+    // body: body - the message
 
-// Close the connection
+    channel.BasicPublish("example-direct-exchange", routingKey, null, body);
 
-// connection.Close();
+    Console.WriteLine("Message Sent");
+});
 
 Console.ReadLine();
