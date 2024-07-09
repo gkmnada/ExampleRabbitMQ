@@ -7,21 +7,24 @@ using System.Text;
 // Create a connection factory
 
 var factory = new ConnectionFactory();
-factory.Uri = new Uri("-cloud-");
+factory.Uri = new Uri("Cloud");
 
 // Create a connection and a channel
 
 using var connection = factory.CreateConnection();
 using var channel = connection.CreateModel();
 
-// Declare a queue
+// Bind the queue to the exchange
 
-// durable: false - the queue will not survive a broker restart
-// exclusive: false - the queue can be accessed by other connections
-// autoDelete: false - the queue will not be deleted once the connection is closed
+// queue: "" - the name of the queue
+// exchange: "example-fanout-exchange" - the name of the exchange
+// routingKey: "" - the routing key
 // arguments: null - no additional arguments
 
-channel.QueueDeclare("example-queue", false, false, false, null);
+// random queue name
+var randomQueueName = channel.QueueDeclare().QueueName;
+
+channel.QueueBind(randomQueueName, "example-fanout-exchange", "");
 
 // Consume the message
 
@@ -35,7 +38,7 @@ channel.QueueDeclare("example-queue", false, false, false, null);
 
 var consumer = new EventingBasicConsumer(channel);
 
-channel.BasicConsume("example-queue", true, consumer);
+channel.BasicConsume(randomQueueName, true, consumer);
 
 consumer.Received += (object? sender, BasicDeliverEventArgs e) =>
 {
